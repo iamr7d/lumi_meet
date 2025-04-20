@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" class="overflow-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Interviewer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/svg+xml" href="Group 1.svg" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Product Sans alternative -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="overflow-hidden">
+  <!-- Animated background gradient -->
+  <div class="fixed inset-0 w-full h-full z-0 bg-gradient-to-tr from-blue-50 via-white to-green-50 animate-gradient-move"></div>
+  <div class="min-h-screen flex flex-col relative z-10">
+    <!-- Top Left Logo/App Name -->
+    <div class="fixed top-4 left-6 z-50">
+      <img src="Group 1.svg" alt="Logo" class="w-24 h-24 object-contain" />
+    </div>
+    <!-- Main Content: Form (left) + 3D Image (right) -->
+    <div class="flex flex-1 items-center justify-center gap-36 px-2 py-8 md:py-0 md:px-0 flex-col md:flex-row">
+      <form class="flex flex-col gap-6 min-w-[320px] max-w-sm w-full bg-white/70 backdrop-blur-lg p-8 md:p-10 rounded-3xl border border-blue-100 glass-card">
+        <h2 class="text-2xl md:text-2.5xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">Start your AI Interview</h2>
+        <div class="flex flex-col gap-1">
+          <label for="name" class="text-xs font-medium text-gray-600 mb-1">Name</label>
+          <input id="name" name="name" type="text" placeholder="Enter your name" required class="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 text-base bg-white/80" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="college" class="text-xs font-medium text-gray-600 mb-1">College</label>
+          <select id="college" name="college" required class="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-green-500 text-base bg-white/80">
+            <option value="">Select your college</option>
+            <option value="IIT">IIT</option>
+            <option value="NIT">NIT</option>
+            <option value="BITS">BITS</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="jobdesc" class="text-xs font-medium text-gray-600 mb-1">Job Description</label>
+          <textarea id="jobdesc" name="jobdesc" rows="5" placeholder="Paste the job description here" class="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 text-base bg-white/80 resize-none"></textarea>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="resume" class="text-xs font-medium text-gray-600 mb-1">Upload your resume</label>
+          <div class="flex items-center justify-center w-full">
+            <label for="resume" class="flex flex-col items-center justify-center w-full h-28 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                </svg>
+                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                <p class="text-xs text-gray-500">PDF, DOC, DOCX (MAX. 5MB)</p>
+              </div>
+              <input id="resume" name="resume" type="file" accept=".pdf,.doc,.docx" class="hidden" />
+            </label>
+          </div>
+        </div>
+        <button id="startBtn" type="submit" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-2xl py-3 transition-all tracking-wide flex items-center justify-center gap-2 relative overflow-hidden">
+          <span id="startBtnIcon">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          </span>
+          <span id="startBtnText">Start Interview</span>
+        </button>
+      </form>
+      <div class="flex items-center justify-center min-w-[340px] max-w-xl">
+        <img src="original-7616a7ca234ae6cfd8a5f9ef96211dc7.jpg" alt="3D Interview" class="w-full max-w-[520px] md:max-w-[600px] rounded-3xl object-contain bg-white/60 backdrop-blur" />
+      </div>
+    </div>
+    <!-- Google-style floating help FAB -->
+    <button class="fixed bottom-8 right-8 bg-white/90 rounded-full p-4 border border-blue-200 hover:bg-blue-50 transition-all z-50 flex items-center justify-center">
+      <svg class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>
+    </button>
+  </div>
+  <style>
+    @keyframes gradient-move {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .animate-gradient-move {
+      background-size: 200% 200%;
+      animation: gradient-move 12s ease-in-out infinite;
+    }
+    .glass-card {
+      border: 1.5px solid rgba(200, 220, 255, 0.17);
+      backdrop-filter: blur(18px) saturate(1.2);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    }
+  </style>
+  <script src="upload.js"></script>
+  <script src="dropzone.js"></script>
+  <!-- Old form submit JS removed: now handled in upload.js -->
+<style>
+@keyframes gradient-x {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 2s linear infinite;
+}
+.animate-spin-slow {
+  animation: spin 1.8s linear infinite;
+}
+</style>
+</body>
+</html>
