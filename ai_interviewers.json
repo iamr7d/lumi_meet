@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Dr. Arjun Sharma",
+    "role": "Principal Software Architect",
+    "avatar": "arjun_sharma.png",
+    "bio": "Dr. Arjun Sharma is a renowned architect with 20+ years of experience building scalable systems for global enterprises. He specializes in system design, architecture, and technical leadership."
+  },
+  {
+    "name": "Priya Venkatesh",
+    "role": "Senior Engineering Manager",
+    "avatar": "priya_venkatesh.png",
+    "bio": "Priya Venkatesh is a dynamic leader with expertise in managing cross-functional engineering teams and driving innovation in software delivery."
+  },
+  {
+    "name": "Vikram Mehta",
+    "role": "Lead Backend Developer",
+    "avatar": "vikram_mehta.png",
+    "bio": "Vikram Mehta specializes in backend development, distributed systems, and API design, with a focus on high-performance and reliability."
+  },
+  {
+    "name": "Divya Patel",
+    "role": "DevOps Specialist",
+    "avatar": "divya_patel.png",
+    "bio": "Divya Patel is an expert in cloud infrastructure, CI/CD, and automation, ensuring robust and scalable deployment pipelines."
+  }
+]

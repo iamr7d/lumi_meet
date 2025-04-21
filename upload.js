@@ -45,7 +45,38 @@ document.addEventListener('DOMContentLoaded', function () {
         startBtnIcon.innerHTML = '<svg class="h-6 w-6 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>';
         startBtn.disabled = true;
         startBtn.classList.add('opacity-80','cursor-not-allowed');
-        setTimeout(function() { window.location.href = 'interview.html'; }, 800);
+        // After upload, fetch the generated JSON file and use its resumeText
+        const jsonFilename = result.filename.replace(/\.pdf$/i, '.json');
+        fetch(`/uploads/${jsonFilename}`)
+          .then(res => res.json())
+          .then(jsonData => {
+            // Now generate questions with the real resumeText
+            return fetch('/api/gemini-interview-questions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jobdesc: jobdescInput.value,
+                resumeText: jsonData.resumeText || ''
+              })
+            });
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.questions && data.questions.length > 0) {
+              window.location.href = 'interview.html';
+            } else {
+              startBtnText.textContent = 'Question Gen Failed';
+              startBtnIcon.innerHTML = '';
+              startBtn.disabled = false;
+              startBtn.classList.remove('opacity-80','cursor-not-allowed');
+            }
+          })
+          .catch(() => {
+            startBtnText.textContent = 'Question Gen Failed';
+            startBtnIcon.innerHTML = '';
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-80','cursor-not-allowed');
+          });
       } else {
         throw new Error('Upload failed');
       }
