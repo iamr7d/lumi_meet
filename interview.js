@@ -22,12 +22,12 @@ async function generateQuestionsWithGemini(jobdesc, resumeText) {
   return [];
 }
 
-let aiQuestions = [];
 let aiCurrent = 0;
 let aiFollowup = null;
 let isFollowupActive = false;
 let resumeContext = null;
 let panelIntroduced = false;
+let currentAIQuestion = null;
 
 
 // Utility: Clean up AI question text (remove markdown, Q1:, unnecessary symbols, parenthetical explanations)
@@ -299,62 +299,58 @@ function autoAdvanceQuestion() {
     document.getElementById('ai-questions').textContent = 'Interview complete!';
     document.getElementById('ai-answer-input').classList.add('hidden');
     document.getElementById('submit-answer-btn').classList.add('hidden');
-  }
-}
 
 let silenceTimeout = null;
 
-function showAIQuestion() {
+async function showAIQuestion() {
   // Panel introductions at the very start
   if (!panelIntroduced && aiCurrent === 0) {
     panelIntroduced = true;
     const feed = document.getElementById('aiChatFeed');
     feed.innerHTML = '';
-    interviewAgents.forEach(agent => {
-      const introDiv = document.createElement('div');
-      introDiv.className = 'flex flex-row items-start gap-2 mb-4 animate-fade-in';
-      introDiv.innerHTML = `<div class="bg-blue-50 rounded-2xl px-5 py-3 text-blue-900 font-semibold shadow border border-blue-200 max-w-[90%]">
-        Hello, I'm <b>${agent.name}</b>, ${agent.role}. ${agent.intro || ''} ${agent.personality ? `<span class='italic text-blue-700'>(${agent.personality})</span>` : ''}
-      </div>`;
-      feed.appendChild(introDiv);
-    });
-    // After intros, show the first question after a short pause
-    setTimeout(() => showAIQuestion(), 2000);
-    return;
-  }
-  // Always schedule auto-advance after 2s, even with no input or answer
-  if (typeof silenceAdvanceTimeout !== 'undefined' && silenceAdvanceTimeout) clearTimeout(silenceAdvanceTimeout);
-  silenceAdvanceTimeout = setTimeout(() => {
-    if (!isFollowupActive && (!userAnswers[aiCurrent] || userAnswers[aiCurrent].trim() === '')) {
-      autoAdvanceQuestion();
+    // ... (rest of the code remains the same)
+    timerDiv.className = 'flex flex-row items-center justify-center mb-2';
+    timerDiv.innerHTML = `<span id="question-timer" class="inline-block text-lg font-bold text-blue-700 bg-blue-100 rounded-full px-4 py-1 shadow-sm border border-blue-200"></span>`;
+    feed.appendChild(timerDiv);
+    updateTimerDisplayUI();
+
+    // Fetch the latest resume/jobdesc for real-time context
+    if (!resumeContext) {
+      resumeContext = await fetchLatestResumeJson();
     }
-  }, 5000);
+    // Request the next question in real time
+    let questionText = '';
+    try {
+      const resp = await fetch('/api/gemini-interview-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobdesc: resumeContext.jobdesc,
+          resumeText: resumeContext.resumeText,
+          questionIndex: aiCurrent
+        })
+      });
+      const data = await resp.json();
+      questionText = data.question || '';
+      currentAIQuestion = questionText;
+    } catch (e) {
+      questionText = 'Error generating question. Please try again.';
+      currentAIQuestion = questionText;
+    }
 
-  // Hide the old container for questions (if present)
-  const container = document.getElementById('ai-questions');
-  if (container) container.style.display = 'none';
-  renderSidebar();
+    // Clean up question text: remove markdown, Q1:, extra symbols, and explanations in parentheses
+    const cleanQuestion = cleanAIQuestion(questionText);
 
-  // Render current question at the top of the AI Interview Feed
-  const feed = document.getElementById('aiChatFeed');
-  feed.innerHTML = '';
-
-  // Timer above question
-  const timerDiv = document.createElement('div');
-  timerDiv.className = 'flex flex-row items-center justify-center mb-2';
-  timerDiv.innerHTML = `<span id="question-timer" class="inline-block text-lg font-bold text-blue-700 bg-blue-100 rounded-full px-4 py-1 shadow-sm border border-blue-200"></span>`;
-  feed.appendChild(timerDiv);
-  updateTimerDisplayUI();
-
-  // Show current question
-  if (aiQuestions.length > 0) {
+    // Try to parse interviewer name from the question text (e.g., 'Dr. Sharma: ...')
+    let parsedAgent = null;
+    let parsedNameMatch = cleanQuestion.match(/^([A-Za-z. ]+):/);
+    if (parsedNameMatch) {
+      let parsedName = parsedNameMatch[1].trim();
+      parsedAgent = interviewAgents.find(a => a.name.startsWith(parsedName) || a.name.includes(parsedName));
+    }
+    const agent = parsedAgent || interviewAgents[aiCurrent % interviewAgents.length];
     const qDiv = document.createElement('div');
     qDiv.className = 'flex flex-col items-start gap-2 mb-6 animate-fade-in';
-    // Clean up question text: remove markdown, Q1:, extra symbols, and explanations in parentheses
-    const cleanQuestion = cleanAIQuestion(aiQuestions[aiCurrent]);
-
-    // Add AI Interviewer label and question card
-    const agent = interviewAgents[aiCurrent % interviewAgents.length];
     qDiv.innerHTML = `
       <div class="flex flex-col items-start w-full">
         <div id="ai-interviewer-label" class="mb-2 ml-1 px-4 py-1 bg-gradient-to-r from-blue-200 via-blue-100 to-blue-50 text-blue-800 font-semibold rounded-full shadow text-sm border border-blue-200" style="display:inline-block; border-radius: 1.3rem 1.3rem 1.3rem 0.5rem;">
@@ -379,14 +375,14 @@ function showAIQuestion() {
       } else {
         feedback = `If you need help, feel free to start answering or ask for clarification!`;
       }
-      playKnowLumiTTS(feedback);
-      appendToChatFeed(feedback, 'KnowLumi AI Agent');
-    }, 10000); // 10 seconds
+      appendAIToChatFeed(feedback);
+    }, 14000);
 
-    // Also schedule auto-advance after 2s silence
-    scheduleAutoAdvanceAfterSilence();
-  }
+    document.getElementById('submit-answer-btn').classList.remove('hidden');
+    startQuestionTimer();
+  } // 10 seconds
 
+  // Also schedule auto-advance after 2s silence
   // Show answer if already answered
   if (userAnswers[aiCurrent]) {
     const aDiv = document.createElement('div');
@@ -867,6 +863,141 @@ function resetTimer() {
   timer = 0;
   updateTimerDisplay();
 }
+
+// --- REAL-TIME AI SCORING ---
+let aiScoreInterval = null;
+let aiScoreHistory = [];
+let aiScoreChart = null;
+let lastScoreTimestamp = 0;
+
+function getAnsweredQAs() {
+  // Collect all answered questions so far with timestamps
+  let answers = [];
+  for (let i = 0; i <= aiCurrent; i++) {
+    if (userAnswers[i]) {
+      answers.push({
+        question: currentAIQuestion, // Use the latest question for now
+        answer: userAnswers[i],
+        timestamp: Date.now()
+      });
+    }
+  }
+  return answers;
+}
+
+async function updateAIScoreRealtime() {
+  const answers = getAnsweredQAs();
+  if (!answers.length) return;
+  try {
+    const resp = await fetch('/api/gemini-rate-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers })
+    });
+    const data = await resp.json();
+    if (data.sessionRatings && data.sessionRatings.length) {
+      aiScoreHistory.push({
+        timestamp: Date.now(),
+        ratings: data.sessionRatings,
+        avgScore: data.avgScore,
+        verdict: data.verdict
+      });
+      updateAIScoreUI(data.avgScore, data.verdict);
+    }
+  } catch (e) {
+    // Optionally show error
+  }
+}
+
+function updateAIScoreUI(avgScore, verdict) {
+  // Update a badge or progress bar for AI score
+  let badge = document.getElementById('ai-score-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'ai-score-badge';
+    badge.className = 'rounded-xl bg-gradient-to-r from-blue-400 to-green-400 text-white px-6 py-3 shadow-lg text-2xl font-bold fixed top-8 right-8 z-50';
+    document.body.appendChild(badge);
+  }
+  badge.innerHTML = `<span class='mr-2'>AI Score:</span> <span class='font-mono text-3xl'>${Math.round(avgScore)}</span> <span class='ml-2 text-lg font-semibold'>/100</span><br><span class='text-base font-medium'>${verdict}</span>`;
+}
+
+function startAIScoreInterval() {
+  if (aiScoreInterval) return;
+  aiScoreInterval = setInterval(updateAIScoreRealtime, 30000); // 30s
+}
+function stopAIScoreInterval() {
+  if (aiScoreInterval) clearInterval(aiScoreInterval);
+  aiScoreInterval = null;
+}
+
+// Call startAIScoreInterval() at interview start
+// Call stopAIScoreInterval() at interview end
+
+// --- END REAL-TIME AI SCORING ---
+
+// --- PERFORMANCE CHART ---
+async function showPerformanceChartAndVerdict() {
+  // Wait for last score update
+  await updateAIScoreRealtime();
+  stopAIScoreInterval();
+  // Chart.js loader
+  if (!window.Chart) {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    document.head.appendChild(script);
+    await new Promise(res => { script.onload = res; });
+  }
+  // Prepare data
+  const labels = aiScoreHistory.map(h => new Date(h.timestamp).toLocaleTimeString());
+  const scores = aiScoreHistory.map(h => h.avgScore);
+  // Create chart container
+  let chartDiv = document.getElementById('ai-score-chart-div');
+  if (!chartDiv) {
+    chartDiv = document.createElement('div');
+    chartDiv.id = 'ai-score-chart-div';
+    chartDiv.className = 'fixed left-1/2 top-1/2 z-50 bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8 flex flex-col items-center justify-center' +
+      ' w-[90vw] max-w-2xl h-[60vh] max-h-[500px] -translate-x-1/2 -translate-y-1/2';
+    document.body.appendChild(chartDiv);
+  }
+  chartDiv.innerHTML = `
+    <div class='text-2xl font-bold mb-4 text-blue-900'>Performance Over Time</div>
+    <canvas id='ai-score-chart' class='mb-6 w-full h-64'></canvas>
+    <div class='text-xl font-semibold text-green-600 mb-2'>Final Verdict: <span id='ai-final-verdict'></span></div>
+    <button onclick='document.getElementById("ai-score-chart-div").style.display="none"' class='mt-2 px-6 py-2 rounded bg-blue-500 hover:bg-blue-700 text-white font-bold shadow'>Close</button>
+  `;
+  const ctx = document.getElementById('ai-score-chart').getContext('2d');
+  if (aiScoreChart) aiScoreChart.destroy();
+  aiScoreChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'AI Score',
+        data: scores,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.1)',
+        tension: 0.4,
+        pointRadius: 6,
+        pointBackgroundColor: '#10b981',
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        y: { min: 0, max: 100, ticks: { stepSize: 10 } }
+      }
+    }
+  });
+  document.getElementById('ai-final-verdict').textContent = aiScoreHistory[aiScoreHistory.length - 1]?.verdict || '';
+  chartDiv.style.display = 'flex';
+}
+// Call showPerformanceChartAndVerdict() at interview end
+
 // --- CONTINUOUS REAL-TIME SPEECH TO TEXT FOR AI INTERVIEW FEED ONLY ---
 const LANG = 'en-US';
 let camRecognition;
