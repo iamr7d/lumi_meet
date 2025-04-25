@@ -255,11 +255,22 @@ let timerDuration = 120; // seconds per question (2 min)
 let timerRemaining = timerDuration;
 let silenceAdvanceTimeout = null;
 
-function scheduleAutoAdvanceAfterSilence() {
+// New: Schedule auto-advance after long inactivity (60s)
+function scheduleAutoAdvanceAfterInactivity() {
   if (silenceAdvanceTimeout) clearTimeout(silenceAdvanceTimeout);
   silenceAdvanceTimeout = setTimeout(() => {
-    if (!isFollowupActive) autoAdvanceQuestion();
-  }, 2000); // 2 seconds
+    // Show warning before advancing
+    const feed = document.getElementById('aiChatFeed');
+    const warningDiv = document.createElement('div');
+    warningDiv.className = 'flex flex-row items-center gap-2 mb-4 animate-fade-in';
+    warningDiv.innerHTML = `<div class="bg-yellow-50 rounded-2xl px-5 py-3 text-yellow-900 font-semibold shadow border border-yellow-200 max-w-[90%]">No activity detected for 1 minute. Moving to the next question...</div>`;
+    feed.appendChild(warningDiv);
+    setTimeout(() => {
+      if (!isFollowupActive && (!userAnswers[aiCurrent] || userAnswers[aiCurrent].trim() === '')) {
+        autoAdvanceQuestion();
+      }
+    }, 2000); // 2s delay for user to see warning
+  }, 60000); // 60 seconds
 }
 
 
@@ -383,8 +394,8 @@ function showAIQuestion() {
       appendToChatFeed(feedback, 'KnowLumi AI Agent');
     }, 10000); // 10 seconds
 
-    // Also schedule auto-advance after 2s silence
-    scheduleAutoAdvanceAfterSilence();
+    // Schedule auto-advance after 60s inactivity
+    scheduleAutoAdvanceAfterInactivity();
   }
 
   // Show answer if already answered
@@ -422,13 +433,9 @@ function showAIQuestion() {
           appendToChatFeed(feedback, 'KnowLumi AI Agent');
         }, 10000);
       }
-      // Reset auto-advance timer on input
-      if (typeof silenceAdvanceTimeout !== 'undefined' && silenceAdvanceTimeout) clearTimeout(silenceAdvanceTimeout);
-      silenceAdvanceTimeout = setTimeout(() => {
-        if (!isFollowupActive && (!userAnswers[aiCurrent] || userAnswers[aiCurrent].trim() === '')) {
-          autoAdvanceQuestion();
-        }
-      }, 5000);
+      // Reset inactivity auto-advance timer on input
+      if (silenceAdvanceTimeout) clearTimeout(silenceAdvanceTimeout);
+      scheduleAutoAdvanceAfterInactivity();
     };
 
   } else {
